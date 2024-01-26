@@ -55,130 +55,130 @@ typedef float Mat4[4][4];
 #define HGB_SQRT_THREE 1.73205080756887729352744634150587236f
 
 // Computes x raised to the power of y
-__DEVICE__ inline float hgb_pow(float x, float y) { return _powf(x, y); }
+__DEVICE__ inline f32 hgb_pow(f32 x, f32 y) { return _powf(x, y); }
 
 // Computes the value of the natural logarithm of x
-__DEVICE__ inline float hgb_log(float x) { return _logf(x); }
+__DEVICE__ inline f32 hgb_log(f32 x) { return _logf(x); }
 
 // Computes the value of the logarithm of x to base 2
-__DEVICE__ inline float hgb_log2(float x) { return _log2f(x); }
+__DEVICE__ inline f32 hgb_log2(f32 x) { return _log2f(x); }
 
 // Computes the value of the logarithm of x to base 10
-__DEVICE__ inline float hgb_log10(float x) { return _log10f(x); }
+__DEVICE__ inline f32 hgb_log10(f32 x) { return _log10f(x); }
 
 // Computes e**x, the base-e exponential of x
-__DEVICE__ inline float hgb_exp(float x) { return _expf(x); }
+__DEVICE__ inline f32 hgb_exp(f32 x) { return _expf(x); }
 
 // Computes 2**x, the base-2 exponential of x
-__DEVICE__ inline float hgb_exp2(float x) { return _exp2f(x); }
+__DEVICE__ inline f32 hgb_exp2(f32 x) { return _exp2f(x); }
 
 // Computes 10**x, the base-10 exponential of x
-__DEVICE__ inline float hgb_exp10(float x) { return _exp10f(x); }
+__DEVICE__ inline f32 hgb_exp10(f32 x) { return _exp10f(x); }
 
 // Clamps x to be within the interval [min, max]
-__DEVICE__ inline float hgb_clamp(float x, float min, float max) { return _clampf(x, min, max); }
+__DEVICE__ inline f32 hgb_clamp(f32 x, f32 min, f32 max) { return _clampf(x, min, max); }
 
 // Clamps x to be within the interval [0.0f, 1.0f]
-__DEVICE__ inline float hgb_saturate(float x) { return _saturatef(x); }
+__DEVICE__ inline f32 hgb_saturate(f32 x) { return _saturatef(x); }
 
 // Clamps x to be within the interval [0.0f, 1.0f]
-__DEVICE__ inline float hgb_clamp01(float x) { return _saturatef(x); }
+__DEVICE__ inline f32 hgb_clamp01(f32 x) { return _saturatef(x); }
 
 // Computes the non-negative square root of x
-__DEVICE__ inline float hgb_sqrt(float x) { return _sqrtf(x); }
+__DEVICE__ inline f32 hgb_sqrt(f32 x) { return _sqrtf(x); }
 
 // Computes the cube root of x
-__DEVICE__ inline float hgb_cbrt(float x) { return _cbrtf(x); }
+__DEVICE__ inline f32 hgb_cbrt(f32 x) { return _cbrtf(x); }
 
 // Returns the smallest integral value greater than or equal to x
-__DEVICE__ inline float hgb_ceil(float x) { return _ceil(x); }
+__DEVICE__ inline f32 hgb_ceil(f32 x) { return _ceil(x); }
 
 // Returns the largest integral value less than or equal to x
-__DEVICE__ inline float hgb_floor(float x) { return _floor(x); }
+__DEVICE__ inline f32 hgb_floor(f32 x) { return _floor(x); }
 
 // Returns the integral value nearest to but no larger in magnitude than x
-__DEVICE__ inline float hgb_trunc(float x) { return _truncf(x); }
+__DEVICE__ inline f32 hgb_trunc(f32 x) { return _truncf(x); }
 
 // Returns the integral value nearest to x rounding, with half-way cases rounded away from zero
-__DEVICE__ inline float hgb_round(float x) { return _round(x); }
+__DEVICE__ inline f32 hgb_round(f32 x) { return _round(x); }
 
 // Computes the floating-point remainder of x/y
-__DEVICE__ inline float hgb_mod(float x, float y) { return _fmod(x, y); }
+__DEVICE__ inline f32 hgb_mod(f32 x, f32 y) { return _fmod(x, y); }
 
 // Computes the value r such that r = x - n*y, where n is the integer nearest the exact value of x/y
-__DEVICE__ inline float hgb_remainder(float x, float y) { return _fremainder(x, y); }
+__DEVICE__ inline f32 hgb_remainder(f32 x, f32 y) { return _fremainder(x, y); }
 
 // Computes the square root of the sum of squares of x and y
-__DEVICE__ inline float hgb_hypot(float x, float y) { return _hypotf(x, y); }
+__DEVICE__ inline f32 hgb_hypot(f32 x, f32 y) { return _hypotf(x, y); }
 
 // Computes the cosine of x (measured in radians)
-__DEVICE__ inline float hgb_cos(float x) { return _cosf(x); }
+__DEVICE__ inline f32 hgb_cos(f32 x) { return _cosf(x); }
 
 // Computes the sine of x (measured in radians)
-__DEVICE__ inline float hgb_sin(float x) { return _sinf(x); }
+__DEVICE__ inline f32 hgb_sin(f32 x) { return _sinf(x); }
 
 // Computes the tangent of x (measured in radians)
-__DEVICE__ inline float hgb_tan(float x) { return _tanf(x); }
+__DEVICE__ inline f32 hgb_tan(f32 x) { return _tanf(x); }
 
 // Computes the principle value of the arc cosine of x
-__DEVICE__ inline float hgb_acos(float x) { return _acosf(x); }
+__DEVICE__ inline f32 hgb_acos(f32 x) { return _acosf(x); }
 
 // Computes the principle value of the arc sine of x
-__DEVICE__ inline float hgb_asin(float x) { return _asinf(x); }
+__DEVICE__ inline f32 hgb_asin(f32 x) { return _asinf(x); }
 
 // Computes the principal value of the arc tangent of y/x, using the signs of both arguments to determine the quadrant of the return value
-__DEVICE__ inline float hgb_atan2(float y, float x) { return _atan2f(y, x); }
+__DEVICE__ inline f32 hgb_atan2(f32 y, f32 x) { return _atan2f(y, x); }
 
 // Computes the principle value of the inverse hyperbolic cosine of x
-__DEVICE__ inline float hgb_acosh(float x) { return _acoshf(x); }
+__DEVICE__ inline f32 hgb_acosh(f32 x) { return _acoshf(x); }
 
 // Computes the principle value of the inverse hyperbolic sine of x
-__DEVICE__ inline float hgb_asinh(float x) { return _asinhf(x); }
+__DEVICE__ inline f32 hgb_asinh(f32 x) { return _asinhf(x); }
 
 // Computes the inverse hyperbolic tangent of x
-__DEVICE__ inline float hgb_atanh(float x) { return _atanhf(x); }
+__DEVICE__ inline f32 hgb_atanh(f32 x) { return _atanhf(x); }
 
 // Computes the hyperbolic cosine of x
-__DEVICE__ inline float hgb_cosh(float x) { return _coshf(x); }
+__DEVICE__ inline f32 hgb_cosh(f32 x) { return _coshf(x); }
 
 // Computes the hyperbolic sine of x
-__DEVICE__ inline float hgb_sinh(float x) { return _sinhf(x); }
+__DEVICE__ inline f32 hgb_sinh(f32 x) { return _sinhf(x); }
 
 // Computes the hyperbolic tangent of x
-__DEVICE__ inline float hgb_tanh(float x) { return _tanhf(x); }
+__DEVICE__ inline f32 hgb_tanh(f32 x) { return _tanhf(x); }
 
 // Returns the positive difference between x and y:  x - y if x > y, +0 if x is less than or equal to y
-__DEVICE__ inline float hgb_fdim(float x, float y) { return _fdimf(x, y); }
+__DEVICE__ inline f32 hgb_fdim(f32 x, f32 y) { return _fdimf(x, y); }
 
 // Computes (x * y) + z as a single operation
-__DEVICE__ inline float hgb_fma(float x, float y, float z) { return _fmaf(x, y, z); }
+__DEVICE__ inline f32 hgb_fma(f32 x, f32 y, f32 z) { return _fmaf(x, y, z); }
 
 // Computes the natural logorithm of the absolute value of the gamma function of x
-__DEVICE__ inline float hgb_lgamma(float x) { return _lgammaf(x); }
+__DEVICE__ inline f32 hgb_lgamma(f32 x) { return _lgammaf(x); }
 
 // Computes the gamma function of x
-__DEVICE__ inline float hgb_tgamma(float x) { return _tgammaf(x); }
+__DEVICE__ inline f32 hgb_tgamma(f32 x) { return _tgammaf(x); }
 
 // Computes the reciprocal of square root of x
-__DEVICE__ inline float hgb_rsqrt(float x) { return _rsqrtf(x); }
+__DEVICE__ inline f32 hgb_rsqrt(f32 x) { return _rsqrtf(x); }
 
 // Returns a non-zero value if and only if x is an infinite value
-__DEVICE__ inline int hgb_isinf(float x) { return isinf(x); }
+__DEVICE__ inline bool hgb_isinf(f32 x) { return bool(isinf(x)); }
 
 // Returns a non-zero value if and only if x is a NaN value
-__DEVICE__ inline int hgb_isnan(float x) { return isnan(x); }
+__DEVICE__ inline bool hgb_isnan(f32 x) { return bool(isnan(x)); }
 
 // Returns a non-zero value if and only if sign bit of x is set
-__DEVICE__ inline int hgb_signbit(float x) { return signbit(x); }
+__DEVICE__ inline bool hgb_signbit(f32 x) { return bool(signbit(x)); }
 
 // Returns x with its sign changed to y's
-__DEVICE__ inline float hgb_copysign(float x, float y) { return _copysignf(x, y); }
+__DEVICE__ inline f32 hgb_copysign(f32 x, f32 y) { return _copysignf(x, y); }
 
-// Extract mantissa and exponent from x. The mantissa m returned is a float with magnitude in the interval [1/2, 1) or 0, and exp is updated with integer exponent value, whereas x = m * 2^exp
-__DEVICE__ inline float hgb_frexp(float x, int exp) { return _frexp(x, exp); }
+// Extract mantissa and exponent from x. The mantissa m returned is a f32 with magnitude in the interval [1/2, 1) or 0, and exp is updated with integer exponent value, whereas x = m * 2^exp
+__DEVICE__ inline f32 hgb_frexp(f32 x, s32 exp) { return _frexp(x, exp); }
 
 // Returns (x * 2^exp)
-__DEVICE__ inline float hgb_ldexp(float x, int exp) { return _ldexp(x, exp); }
+__DEVICE__ inline f32 hgb_ldexp(f32 x, s32 exp) { return _ldexp(x, exp); }
 
 #define hgb_square(x) ((x) * (x))
 #define hgb_cube(x) ((x) * (x) * (x))
