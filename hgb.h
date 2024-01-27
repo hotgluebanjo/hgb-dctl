@@ -134,7 +134,8 @@ __DEVICE__ inline f32 hgb_acos(f32 x) { return _acosf(x); }
 // Computes the principle value of the arc sine of x
 __DEVICE__ inline f32 hgb_asin(f32 x) { return _asinf(x); }
 
-// Computes the principal value of the arc tangent of y/x, using the signs of both arguments to determine the quadrant of the return value
+// Computes the principal value of the arc tangent of y/x, using the signs of
+// both arguments to determine the quadrant of the return value
 __DEVICE__ inline f32 hgb_atan2(f32 y, f32 x) { return _atan2f(y, x); }
 
 // Computes the principle value of the inverse hyperbolic cosine of x
@@ -155,7 +156,8 @@ __DEVICE__ inline f32 hgb_sinh(f32 x) { return _sinhf(x); }
 // Computes the hyperbolic tangent of x
 __DEVICE__ inline f32 hgb_tanh(f32 x) { return _tanhf(x); }
 
-// Returns the positive difference between x and y:  x - y if x > y, +0 if x is less than or equal to y
+// Returns the positive difference between x and y:  x - y if x > y, +0 if x is
+// less than or equal to y
 __DEVICE__ inline f32 hgb_fdim(f32 x, f32 y) { return _fdimf(x, y); }
 
 // Computes (x * y) + z as a single operation
@@ -182,7 +184,9 @@ __DEVICE__ inline bool hgb_signbit(f32 x) { return bool(signbit(x)); }
 // Returns x with its sign changed to y's
 __DEVICE__ inline f32 hgb_copysign(f32 x, f32 y) { return _copysignf(x, y); }
 
-// Extract mantissa and exponent from x. The mantissa m returned is a f32 with magnitude in the interval [1/2, 1) or 0, and exp is updated with integer exponent value, whereas x = m * 2^exp
+// Extract mantissa and exponent from x. The mantissa m returned is a f32 with
+// magnitude in the interval [1/2, 1) or 0, and exp is updated with integer
+// exponent value, whereas x = m * 2^exp
 __DEVICE__ inline f32 hgb_frexp(f32 x, i32 exp) { return _frexp(x, exp); }
 
 // Returns (x * 2^exp)
