@@ -216,12 +216,12 @@ enum Spow_Settings {
 };
 
 __DEVICE__ inline f32 hgb_spow(f32 x, f32 p) {
-    #if HGB_SPOW == Spow_Preserve
+    #if defined(HGB_SPOW) && HGB_SPOW == Spow_Preserve
     if (x < 0.0f) {
         return x;
     }
     return hgb_pow(x, p);
-    #elif HGB_SPOW == Spow_Clamp
+    #elif defined(HGB_SPOW) && HGB_SPOW == Spow_Clamp
     if (x < 0.0f) {
         return 0.0f;
     }
