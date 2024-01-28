@@ -1,6 +1,8 @@
 // HGB DCTL library 0.1.0
 // ----------------------
+// Wheel reinvention!
 // Attempting to be compatible with all DCTL targets.
+//
 // - https://github.com/hotgluebanjo
 //
 // References:
@@ -11,31 +13,37 @@
 //
 // Since unions can't have anonymous structs it seems like a good idea to
 // simply transmute floatN instances for indexing rather than make a custom
-// VecN type.
+// VecN type. This also preserves the operator overloading.
 
-#if defined(__APPLE__) || defined(__MACOSX)
-    #define HGB_IS_MAC
+#ifndef HGB_SPOW
+    #define HGB_SPOW Spow_Mirror
 #endif
 
-#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) || defined(_WIN64) || defined(__WIN64__) || defined(WIN64)
-    #define HGB_IS_WINDOWS
+#if defined(_WIN32) || defined(_WIN64)
+    #define HGB_OS_WINDOWS
+#elif defined(__APPLE__) && defined(__MACH__)
+    #define HGB_OS_MAC
+#elif defined(__linux__)
+    #define HGB_OS_LINUX
+#else
+    #error "HGB: Unsupported OS"
 #endif
 
-#if defined(linux) || defined(__linux__)
-    #define HGB_IS_LINUX
+#if defined(DEVICE_IS_METAL)
+    #define HGB_DEVICE_METAL
+#elif defined(DEVICE_IS_CUDA)
+    #define HGB_DEVICE_CUDA
+#elif defined(DEVICE_IS_OPENCL)
+    #define HGB_DEVICE_OPENCL
+#else
+    #error "HGB: Unknown device framework"
 #endif
 
-#ifdef DEVICE_IS_METAL
-    #define HGB_IS_METAL
-#endif
-
-#ifdef DEVICE_IS_CUDA
-    #define HGB_IS_CUDA
-#endif
-
-#ifdef DEVICE_IS_OPENCL
-    #define HGB_IS_OPENCL
-#endif
+#define nil 0
+#define loop while (true)
+#define for_range(i, min, max) for (usize i = min; i < max; i += 1)
+#define cast(T) (T)
+#define transmute(x, T) (*((T)(&x)))
 
 // Some, uh, assumptions. stdint is not included.
 typedef unsigned char   u8;
@@ -55,25 +63,6 @@ typedef float f32;
 
 typedef u8 byte;
 
-typedef float2 Vec2;
-typedef float3 Vec3;
-typedef float4 Vec4;
-
-typedef float Mat2[2][2];
-typedef float Mat3[3][3];
-typedef float Mat4[4][4];
-
-#ifndef nil
-    #define nil 0
-#endif
-
-#ifdef HGB_LANG
-    #define loop while (true)
-    #define for_range(i, min, max) for (usize i = min; i < max; i += 1)
-    #define cast(T) (T)
-    #define transmute(x, T) (*((T)(&x)))
-#endif
-
 #define HGB_PI 3.14159265358979323846264338327950288f
 #define HGB_TAU 6.28318530717958647692528676655900576f
 
@@ -82,8 +71,9 @@ typedef float Mat4[4][4];
 #define HGB_SQRT_TWO 1.41421356237309504880168872420969808f
 #define HGB_SQRT_THREE 1.73205080756887729352744634150587236f
 
-#define HGB_ERROR make_float3(1.0f, 0.0f, 0.0f)
-#define HGB_WARNING make_float3(1.0f, 1.0f, 0.0f)
+#define HGB_OK hgb_vec3(0.0f, 1.0f, 0.0f)
+#define HGB_WARNING hgb_vec3(1.0f, 1.0f, 0.0f)
+#define HGB_ERROR hgb_vec3(1.0f, 0.0f, 0.0f)
 
 // Computes x raised to the power of y
 __DEVICE__ inline f32 hgb_pow(f32 x, f32 y) { return _powf(x, y); }
@@ -235,7 +225,6 @@ __DEVICE__ inline f32 hgb_to_radians(f32 degrees) {
     return degrees * HGB_TAU / 360.0f;
 }
 
-// Just set `HGB_SPOW`.
 enum Spow_Settings {
     Spow_Preserve,
     Spow_Clamp,
@@ -243,12 +232,12 @@ enum Spow_Settings {
 };
 
 __DEVICE__ inline f32 hgb_spow(f32 x, f32 p) {
-    #if defined(HGB_SPOW) && HGB_SPOW == Spow_Preserve
+    #if HGB_SPOW == Spow_Preserve
         if (x < 0.0f) {
             return x;
         }
         return hgb_pow(x, p);
-    #elif defined(HGB_SPOW) && HGB_SPOW == Spow_Clamp
+    #elif HGB_SPOW == Spow_Clamp
         if (x < 0.0f) {
             return 0.0f;
         }
@@ -279,32 +268,144 @@ __DEVICE__ inline f32 step(f32 edge, f32 x) {
     return 1.0f;
 }
 
-__DEVICE__ Vec2 hgb_vec2(f32 x, f32 y) {
+typedef float2 Vec2;
+typedef float3 Vec3;
+typedef float4 Vec4;
+
+__DEVICE__ inline Vec2 hgb_vec2(f32 x, f32 y) {
     Vec2 out = {x, y};
     return out;
 }
-__DEVICE__ Vec3 hgb_vec3(f32 x, f32 y, f32 z) {
+
+__DEVICE__ inline Vec3 hgb_vec3(f32 x, f32 y, f32 z) {
     Vec3 out = {x, y, z};
     return out;
 }
-__DEVICE__ Vec4 hgb_vec4(f32 x, f32 y, f32 z, f32 w) {
+
+__DEVICE__ inline Vec4 hgb_vec4(f32 x, f32 y, f32 z, f32 w) {
     Vec4 out = {x, y, z, w};
     return out;
 }
 
-__DEVICE__ Vec2 hgb_vec2_repeat(f32 v) { return hgb_vec2(v, v); }
-__DEVICE__ Vec3 hgb_vec3_repeat(f32 v) { return hgb_vec3(v, v, v); }
-__DEVICE__ Vec4 hgb_vec4_repeat(f32 v) { return hgb_vec4(v, v, v, v); }
+__DEVICE__ inline Vec2 hgb_vec2_repeat(f32 v) { return hgb_vec2(v, v); }
+__DEVICE__ inline Vec3 hgb_vec3_repeat(f32 v) { return hgb_vec3(v, v, v); }
+__DEVICE__ inline Vec4 hgb_vec4_repeat(f32 v) { return hgb_vec4(v, v, v, v); }
 
-__DEVICE__ Vec2 hgb_vec2_zeros() { return hgb_vec2_repeat(0.0f); }
-__DEVICE__ Vec3 hgb_vec3_zeros() { return hgb_vec3_repeat(0.0f); }
-__DEVICE__ Vec4 hgb_vec4_zeros() { return hgb_vec4_repeat(0.0f); }
+__DEVICE__ inline Vec2 hgb_vec2_zeros() { return hgb_vec2_repeat(0.0f); }
+__DEVICE__ inline Vec3 hgb_vec3_zeros() { return hgb_vec3_repeat(0.0f); }
+__DEVICE__ inline Vec4 hgb_vec4_zeros() { return hgb_vec4_repeat(0.0f); }
 
-__DEVICE__ Vec3 hgb_mat3_mul_vec3(Mat3 m, Vec3 v) {
-    return make_float3(
-        v.x * m[0][0] + v.y * m[0][1] + v.z * m[0][2],
-        v.x * m[1][0] + v.y * m[1][1] + v.z * m[1][2],
-        v.x * m[2][0] + v.y * m[2][1] + v.z * m[2][2]
+typedef struct Mat2 Mat2;
+struct Mat2 {
+    f32 v[2][2];
+};
+
+typedef struct Mat3 Mat3;
+struct Mat3 {
+    f32 v[3][3];
+};
+
+typedef struct Mat4 Mat4;
+struct Mat4 {
+    f32 v[4][4];
+};
+
+__DEVICE__ inline Mat2 hgb_mat2(
+    f32 v00, f32 v01,
+    f32 v10, f32 v11
+) {
+    Mat2 out = {{
+        {v00, v01},
+        {v10, v11}
+    }};
+    return out;
+}
+
+__DEVICE__ inline Mat3 hgb_mat3(
+    f32 v00, f32 v01, f32 v02,
+    f32 v10, f32 v11, f32 v12,
+    f32 v20, f32 v21, f32 v22
+) {
+    Mat3 out = {{
+        {v00, v01, v02},
+        {v10, v11, v12},
+        {v20, v21, v22}
+    }};
+    return out;
+}
+
+__DEVICE__ inline Mat4 hgb_mat4(
+    f32 v00, f32 v01, f32 v02, f32 v03,
+    f32 v10, f32 v11, f32 v12, f32 v13,
+    f32 v20, f32 v21, f32 v22, f32 v23,
+    f32 v30, f32 v31, f32 v32, f32 v33
+) {
+    Mat4 out = {{
+        {v00, v01, v02, v03},
+        {v10, v11, v12, v13},
+        {v20, v21, v22, v23},
+        {v30, v31, v32, v33}
+    }};
+    return out;
+}
+
+__DEVICE__ inline Mat2 hgb_mat2_repeat(f32 v) {
+    return hgb_mat2(
+        v, v,
+        v, v
+    );
+}
+
+__DEVICE__ inline Mat3 hgb_mat3_repeat(f32 v) {
+    return hgb_mat3(
+        v, v, v,
+        v, v, v,
+        v, v, v
+    );
+}
+
+__DEVICE__ inline Mat4 hgb_mat4_repeat(f32 v) {
+    return hgb_mat4(
+        v, v, v, v,
+        v, v, v, v,
+        v, v, v, v,
+        v, v, v, v
+    );
+}
+
+__DEVICE__ inline Mat2 hgb_mat2_zeros() { return hgb_mat2_repeat(0.0f); }
+__DEVICE__ inline Mat3 hgb_mat3_zeros() { return hgb_mat3_repeat(0.0f); }
+__DEVICE__ inline Mat4 hgb_mat4_zeros() { return hgb_mat4_repeat(0.0f); }
+
+__DEVICE__ inline Mat2 hgb_mat2_identity() {
+    return hgb_mat2(
+        1.0f, 0.0f,
+        0.0f, 1.0f
+    );
+}
+
+__DEVICE__ inline Mat3 hgb_mat3_identity() {
+    return hgb_mat3(
+        1.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 1.0f
+    );
+}
+
+__DEVICE__ inline Mat4 hgb_mat4_identity(f32 v) {
+    return hgb_mat4(
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    );
+}
+
+__DEVICE__ inline Vec3 hgb_mat3_mul_vec3(Mat3 m, Vec3 v) {
+    return hgb_vec3(
+        v.x * m.v[0][0] + v.y * m.v[0][1] + v.z * m.v[0][2],
+        v.x * m.v[1][0] + v.y * m.v[1][1] + v.z * m.v[1][2],
+        v.x * m.v[2][0] + v.y * m.v[2][1] + v.z * m.v[2][2]
     );
 }
 
@@ -433,16 +534,20 @@ __DEVICE__ inline f32 hgb_basis_boxcar(f32 x, f32 size) {
 // No function pointers in OpenCL.
 #define hgb_apply_tf(f, v) make_float3(f(v.x), f(v.y), f(v.z))
 
-__DEVICE__ float hgb_logc_encode(float x) {
+__DEVICE__ inline f32 hgb_linear(f32 x) {
+    return x;
+}
+
+__DEVICE__ f32 hgb_logc_encode(f32 x) {
     if (x > 0.010591f) {
-        return 0.247190f * _log10f(5.555556f * x + 0.052272f) + 0.385537f;
+        return 0.247190f * hgb_log10(5.555556f * x + 0.052272f) + 0.385537f;
     }
     return 5.367655f * x + 0.092809f;
 }
 
-__DEVICE__ float hgb_logc_decode(float x) {
+__DEVICE__ f32 hgb_logc_decode(f32 x) {
     if (x > 0.1496582f){
-        return (_powf(10.0f, (x - 0.385537f) / 0.2471896f) - 0.052272f) / 5.555556f;
+        return (hgb_pow(10.0f, (x - 0.385537f) / 0.2471896f) - 0.052272f) / 5.555556f;
     }
     return (x - 0.092809f) / 5.367655f;
 }
