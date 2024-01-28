@@ -9,10 +9,33 @@
 // - https://developer.apple.com/metal/Metal-Shading-Language-Specification.pdf
 // - https://docs.nvidia.com/cuda/pdf/CUDA_C_Programming_Guide.pdf
 //
-// TODO: Are the default floatN types operator-overloaded for OpenCL?
 // Since unions can't have anonymous structs it seems like a good idea to
 // simply transmute floatN instances for indexing rather than make a custom
 // VecN type.
+
+#if defined(__APPLE__) || defined(__MACOSX)
+    #define HGB_IS_MAC
+#endif
+
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32) || defined(_WIN64) || defined(__WIN64__) || defined(WIN64)
+    #define HGB_IS_WINDOWS
+#endif
+
+#if defined(linux) || defined(__linux__)
+    #define HGB_IS_LINUX
+#endif
+
+#ifdef DEVICE_IS_METAL
+    #define HGB_IS_METAL
+#endif
+
+#ifdef DEVICE_IS_CUDA
+    #define HGB_IS_CUDA
+#endif
+
+#ifdef DEVICE_IS_OPENCL
+    #define HGB_IS_OPENCL
+#endif
 
 // Some, uh, assumptions. stdint is not included.
 typedef unsigned char   u8;
@@ -41,14 +64,14 @@ typedef float Mat3[3][3];
 typedef float Mat4[4][4];
 
 #ifndef nil
-#define nil 0
+    #define nil 0
 #endif
 
 #ifdef HGB_LANG
-#define loop while (true)
-#define for_range(i, min, max) for (usize i = min; i < max; i += 1)
-#define cast(T) (T)
-#define transmute(x, T) (*((T)(&x)))
+    #define loop while (true)
+    #define for_range(i, min, max) for (usize i = min; i < max; i += 1)
+    #define cast(T) (T)
+    #define transmute(x, T) (*((T)(&x)))
 #endif
 
 #define HGB_PI 3.14159265358979323846264338327950288f
@@ -221,17 +244,17 @@ enum Spow_Settings {
 
 __DEVICE__ inline f32 hgb_spow(f32 x, f32 p) {
     #if defined(HGB_SPOW) && HGB_SPOW == Spow_Preserve
-    if (x < 0.0f) {
-        return x;
-    }
-    return hgb_pow(x, p);
+        if (x < 0.0f) {
+            return x;
+        }
+        return hgb_pow(x, p);
     #elif defined(HGB_SPOW) && HGB_SPOW == Spow_Clamp
-    if (x < 0.0f) {
-        return 0.0f;
-    }
-    return hgb_pow(x, p);
+        if (x < 0.0f) {
+            return 0.0f;
+        }
+        return hgb_pow(x, p);
     #else
-    return hgb_sign(x) * hgb_pow(hgb_abs(x), p);
+        return hgb_sign(x) * hgb_pow(hgb_abs(x), p);
     #endif
 }
 
