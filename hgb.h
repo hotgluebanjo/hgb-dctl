@@ -709,126 +709,126 @@ __DEVICE__ Mat3 hgb_npm(Primaries_Whitepoint pw) {
     );
 }
 
-__CONSTANT__ Primaries_Whitepoint BT_709 = {
+__CONSTANT__ Primaries_Whitepoint HGB_BT_709 = {
     {0.640, 0.330},
     {0.300, 0.600},
     {0.150, 0.060},
     {0.3127, 0.3290}
 };
 
-__CONSTANT__ Primaries_Whitepoint BT_2020 = {
+__CONSTANT__ Primaries_Whitepoint HGB_BT_2020 = {
     {0.708, 0.292},
     {0.170, 0.797},
     {0.131, 0.046},
     {0.3127, 0.3290}
 };
 
-__CONSTANT__ Primaries_Whitepoint DCI_P3 = {
+__CONSTANT__ Primaries_Whitepoint HGB_DCI_P3 = {
     {0.680, 0.320},
     {0.265, 0.690},
     {0.150, 0.060},
     {0.314, 0.351}
 };
 
-__CONSTANT__ Primaries_Whitepoint DISPLAY_P3 = {
+__CONSTANT__ Primaries_Whitepoint HGB_DISPLAY_P3 = {
     {0.680, 0.320},
     {0.265, 0.690},
     {0.150, 0.060},
     {0.3127, 0.3290}
 };
 
-__CONSTANT__ Primaries_Whitepoint ACES_AP0 = {
+__CONSTANT__ Primaries_Whitepoint HGB_ACES_AP0 = {
     {0.73470, 0.26530},
     {0.00000, 1.00000},
     {0.00010, -0.07700},
     {0.32168, 0.33767}
 };
 
-__CONSTANT__ Primaries_Whitepoint ACES_AP1 = {
+__CONSTANT__ Primaries_Whitepoint HGB_ACES_AP1 = {
     {0.71300, 0.29300},
     {0.16500, 0.83000},
     {0.12800, 0.04400},
     {0.32168, 0.33767}
 };
 
-__CONSTANT__ Primaries_Whitepoint ADOBE_RGB = {
+__CONSTANT__ Primaries_Whitepoint HGB_ADOBE_RGB = {
     {0.6400, 0.3300},
     {0.2100, 0.7100},
     {0.1500, 0.0600},
     {0.3127, 0.3290}
 };
 
-__CONSTANT__ Primaries_Whitepoint ADOBE_WIDE_GAMUT_RGB = {
+__CONSTANT__ Primaries_Whitepoint HGB_ADOBE_WIDE_GAMUT_RGB = {
     {0.7347, 0.2653},
     {0.1152, 0.8264},
     {0.1566, 0.0177},
     {0.3457, 0.3585}
 };
 
-__CONSTANT__ Primaries_Whitepoint ARRI_WIDE_GAMUT_3 = {
+__CONSTANT__ Primaries_Whitepoint HGB_ARRI_WIDE_GAMUT_3 = {
     {0.6840, 0.3130},
     {0.2210, 0.8480},
     {0.0861, -0.1020},
     {0.3127, 0.3290}
 };
 
-__CONSTANT__ Primaries_Whitepoint ARRI_WIDE_GAMUT_4 = {
+__CONSTANT__ Primaries_Whitepoint HGB_ARRI_WIDE_GAMUT_4 = {
     {0.7347, 0.2653},
     {0.1424, 0.8576},
     {0.0991, -0.0308},
     {0.3127, 0.3290}
 };
 
-__CONSTANT__ Primaries_Whitepoint CANON_CINEMA_GAMUT = {
+__CONSTANT__ Primaries_Whitepoint HGB_CANON_CINEMA_GAMUT = {
     {0.7400, 0.2700},
     {0.1700, 1.1400},
     {0.0800, -0.1000},
     {0.3127, 0.3290}
 };
 
-__CONSTANT__ Primaries_Whitepoint DJI_D_GAMUT = {
+__CONSTANT__ Primaries_Whitepoint HGB_DJI_D_GAMUT = {
     {0.7100, 0.3100},
     {0.2100, 0.8800},
     {0.0900, -0.0800},
     {0.3127, 0.3290}
 };
 
-__CONSTANT__ Primaries_Whitepoint E_GAMUT = {
+__CONSTANT__ Primaries_Whitepoint HGB_E_GAMUT = {
     {0.8000, 0.3177},
     {0.1800, 0.9000},
     {0.0650, -0.0805},
     {0.3127, 0.3290}
 };
 
-__CONSTANT__ Primaries_Whitepoint PANASONIC_V_GAMUT = {
+__CONSTANT__ Primaries_Whitepoint HGB_PANASONIC_V_GAMUT = {
     {0.7300, 0.2800},
     {0.1650, 0.8400},
     {0.1000, -0.0300},
     {0.3127, 0.3290}
 };
 
-__CONSTANT__ Primaries_Whitepoint PROPHOTO = {
+__CONSTANT__ Primaries_Whitepoint HGB_PROPHOTO = {
     {0.734699, 0.265301},
     {0.159597, 0.840403},
     {0.036598, 0.000105},
     {0.345704, 0.358540}
 };
 
-__CONSTANT__ Primaries_Whitepoint RED_WIDE_GAMUT_RGB = {
+__CONSTANT__ Primaries_Whitepoint HGB_RED_WIDE_GAMUT_RGB = {
     {0.780308, 0.304253},
     {0.121595, 1.493994},
     {0.095612, -0.084589},
     {0.3127, 0.3290}
 };
 
-__DEVICE__ Primaries_Whitepoint S_GAMUT = {
+__CONSTANT__ Primaries_Whitepoint HGB_S_GAMUT = {
     {0.7300, 0.2800},
     {0.1400, 0.8550},
     {0.1000, -0.0500},
     {0.3127, 0.3290},
 };
 
-__DEVICE__ Primaries_Whitepoint S_GAMUT3_CINE = {
+__CONSTANT__ Primaries_Whitepoint HGB_S_GAMUT3_CINE = {
     {0.7660, 0.2750},
     {0.2250, 0.8000},
     {0.0890, -0.0870},
