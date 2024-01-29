@@ -43,7 +43,7 @@
 #define loop while (true)
 #define for_range(i, min, max) for (usize i = min; i < max; i += 1)
 #define cast(T) (T)
-#define transmute(x, T) (*((T)(&x)))
+#define transmute(x, T) (*((T *)(&x)))
 
 // Some, uh, assumptions. stdint is not included.
 typedef unsigned char   u8;
@@ -95,15 +95,6 @@ __DEVICE__ inline f32 hgb_exp2(f32 x) { return _exp2f(x); }
 
 // Computes 10**x, the base-10 exponential of x
 __DEVICE__ inline f32 hgb_exp10(f32 x) { return _exp10f(x); }
-
-// Clamps x to be within the interval [min, max]
-__DEVICE__ inline f32 hgb_clamp(f32 x, f32 min, f32 max) { return _clampf(x, min, max); }
-
-// Clamps x to be within the interval [0.0f, 1.0f]
-__DEVICE__ inline f32 hgb_saturate(f32 x) { return _saturatef(x); }
-
-// Clamps x to be within the interval [0.0f, 1.0f]
-__DEVICE__ inline f32 hgb_clamp01(f32 x) { return _saturatef(x); }
 
 // Computes the non-negative square root of x
 __DEVICE__ inline f32 hgb_sqrt(f32 x) { return _sqrtf(x); }
@@ -214,6 +205,10 @@ __DEVICE__ inline f32 hgb_ldexp(f32 x, i32 exp) { return _ldexp(x, exp); }
 #define hgb_max3(a, b, c) hgb_max(a, hgb_max(b, c))
 #define hgb_min3(a, b, c) hgb_min(a, hgb_min(b, c))
 
+#define hgb_clamp(x, start, end) hgb_max(hgb_min((x), (end)), (start))
+#define hgb_clamp01(x) hgb_clamp((x), 0, 1)
+#define hgb_saturate(x) hgb_clamp((x), 0, 1)
+
 #define hgb_abs(x) ((x) < 0 ? -(x) : (x))
 #define hgb_sign(x) ((x) < 0 ? -1 : (x) > 0 ? 1 : 0)
 
@@ -294,6 +289,71 @@ __DEVICE__ inline Vec4 hgb_vec4_repeat(f32 v) { return hgb_vec4(v, v, v, v); }
 __DEVICE__ inline Vec2 hgb_vec2_zeros() { return hgb_vec2_repeat(0.0f); }
 __DEVICE__ inline Vec3 hgb_vec3_zeros() { return hgb_vec3_repeat(0.0f); }
 __DEVICE__ inline Vec4 hgb_vec4_zeros() { return hgb_vec4_repeat(0.0f); }
+
+// No function pointers in OpenCL.
+#define hgb_vec2_map(v, f) hgb_vec2(f(v.x), f(v.y))
+#define hgb_vec3_map(v, f) hgb_vec3(f(v.x), f(v.y), f(v.z))
+#define hgb_vec4_map(v, f) hgb_vec4(f(v.x), f(v.y), f(v.z), f(v.w))
+
+__DEVICE__ Vec2 hgb_vec2_swizzle(Vec2 v, usize x, usize y) {
+    x = hgb_clamp(x, 0, 1);
+    y = hgb_clamp(y, 0, 1);
+    f32 *it = &transmute(v, f32);
+    return hgb_vec2(it[x], it[y]);
+}
+
+__DEVICE__ Vec3 hgb_vec3_swizzle(Vec3 v, usize x, usize y, usize z) {
+    x = hgb_clamp(x, 0, 2);
+    y = hgb_clamp(y, 0, 2);
+    z = hgb_clamp(z, 0, 2);
+    f32 *it = &transmute(v, f32);
+    return hgb_vec3(it[x], it[y], it[z]);
+}
+
+__DEVICE__ Vec4 hgb_vec4_swizzle(Vec4 v, usize x, usize y, usize z, usize w) {
+    x = hgb_clamp(x, 0, 3);
+    y = hgb_clamp(y, 0, 3);
+    z = hgb_clamp(z, 0, 3);
+    w = hgb_clamp(w, 0, 3);
+    f32 *it = &transmute(v, f32);
+    return hgb_vec4(it[x], it[y], it[z], it[w]);
+}
+
+__DEVICE__ f32 hgb_vec2_dot(Vec2 a, Vec2 b) {
+    return a.x * b.x + a.y * b.y;
+}
+
+__DEVICE__ f32 hgb_vec3_dot(Vec3 a, Vec3 b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+__DEVICE__ f32 hgb_vec4_dot(Vec4 a, Vec4 b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+}
+
+__DEVICE__ f32 hgb_vec2_cross(Vec2 a, Vec2 b) {
+    return a.x * b.y - b.x * a.y;
+}
+
+__DEVICE__ Vec3 hgb_vec3_cross(Vec3 a, Vec3 b) {
+    return hgb_vec3(
+        a.y * b.z - a.z * b.y,
+        a.z * b.x - a.x * b.z,
+        a.x * b.y - a.y * b.x
+    );
+}
+
+__DEVICE__ f32 hgb_vec2_length(Vec2 v) {
+    return hgb_sqrt(hgb_square(v.x) + hgb_square(v.y));
+}
+
+__DEVICE__ f32 hgb_vec3_length(Vec3 v) {
+    return hgb_sqrt(hgb_square(v.x) + hgb_square(v.y) + hgb_square(v.z));
+}
+
+__DEVICE__ f32 hgb_vec4_length(Vec4 v) {
+    return hgb_sqrt(hgb_square(v.x) + hgb_square(v.y) + hgb_square(v.z) + hgb_square(v.w));
+}
 
 typedef struct Mat2 Mat2;
 struct Mat2 {
@@ -531,23 +591,246 @@ __DEVICE__ inline f32 hgb_basis_boxcar(f32 x, f32 size) {
     return 1.0f;
 }
 
-// No function pointers in OpenCL.
-#define hgb_apply_tf(f, v) make_float3(f(v.x), f(v.y), f(v.z))
-
 __DEVICE__ inline f32 hgb_linear(f32 x) {
     return x;
 }
 
-__DEVICE__ f32 hgb_logc_encode(f32 x) {
+// EI 800. TODO
+__DEVICE__ f32 hgb_arri_logc_encode(f32 x) {
     if (x > 0.010591f) {
         return 0.247190f * hgb_log10(5.555556f * x + 0.052272f) + 0.385537f;
     }
     return 5.367655f * x + 0.092809f;
 }
 
-__DEVICE__ f32 hgb_logc_decode(f32 x) {
+__DEVICE__ f32 hgb_arri_logc_decode(f32 x) {
     if (x > 0.1496582f){
         return (hgb_pow(10.0f, (x - 0.385537f) / 0.2471896f) - 0.052272f) / 5.555556f;
     }
     return (x - 0.092809f) / 5.367655f;
 }
+
+__DEVICE__ f32 hgb_fuji_flog_encode(f32 x) {
+    if (x >= 0.00089f) {
+        return 0.344676f * _log10f(0.555556f * x + 0.009468f) + 0.790453f;
+    }
+    return 8.735631f * x + 0.092864f;
+}
+
+__DEVICE__ f32 hgb_fuji_flog_decode(f32 x) {
+    if (x >= 0.100537775223865f) {
+        return (_powf(10.0f, (x - 0.790453f) / 0.344676f)) / 0.555556f - 0.009468f / 0.555556f;
+    }
+    return (x - 0.092864f) / 8.735631f;
+}
+
+__DEVICE__ f32 hgb_nikon_nlog_encode(f32 x) {
+    if (x > 0.328f) {
+        return (150.0f / 1023.0f) * _logf(x) + (619.0f / 1023.0f);
+    }
+    return (650.0f / 1023.0f) * _powf((x + 0.0075f), 1.0f / 3.0f);
+}
+
+__DEVICE__ f32 hgb_nikon_nlog_decode(f32 x) {
+    if (x > (452.0f / 1023.0f)){
+        return _expf((x - 619.0f / 1023.0f) / (150.0f / 1023.0f));
+    }
+    return _powf(x / (650.0f / 1023.0f), 3.0f) - 0.0075f;
+}
+
+__DEVICE__ f32 hgb_panasonic_vlog_encode(f32 x) {
+    if (x < 0.01f) {
+        return 5.6f * x + 0.125f;
+    }
+    return 0.241514f * _log10f(x + 0.00873f) + 0.598206f;
+}
+
+__DEVICE__ f32 hgb_panasonic_vlog_decode(f32 x) {
+    if (x < 0.181f) {
+        return (x - 0.125f) / 5.6f;
+    }
+    return _powf(10.0f, ((x - 0.598206f) / 0.241514f)) - 0.00873f;
+}
+
+__DEVICE__ f32 hgb_sony_slog3_encode(f32 x) {
+    if (x >= 0.01125000f) {
+        return (420.0f + _log10f((x + 0.01f) / (0.18f + 0.01f)) * 261.5f) / 1023.0f;
+    }
+    return (x * (171.2102946929f - 95.0f) / 0.01125000f + 95.0f) / 1023.0f;
+}
+
+__DEVICE__ f32 hgb_sony_slog3_decode(f32 x) {
+    if (x >= (171.2102946929f / 1023.0f)) {
+        return _powf(10.0f, (x * 1023.0f - 420.0f) / 261.5f) * (0.18f + 0.01f) - 0.01f;
+    }
+    return (x * 1023.0f - 95.0f) * 0.01125000f / (171.2102946929f - 95.0f);
+}
+
+typedef struct Primaries_Whitepoint Primaries_Whitepoint;
+struct Primaries_Whitepoint {
+    Vec2 r;
+    Vec2 g;
+    Vec2 b;
+    Vec2 w;
+};
+
+__DEVICE__ Mat3 hgb_npm(Primaries_Whitepoint pw) {
+    f32 y = 1.0f;
+    f32 x = pw.w.x * y / pw.w.y;
+    f32 z = (1.0f - pw.w.x - pw.w.y) * y / pw.w.y;
+
+    f32 d = pw.r.x * (pw.b.y - pw.g.y)
+        + pw.b.x * (pw.g.y - pw.r.y)
+        + pw.g.x * (pw.r.y - pw.b.y);
+
+    f32 sr = (x * (pw.b.y - pw.g.y)
+        - pw.g.x * (y * (pw.b.y - 1.0f) + pw.b.y * (x + z))
+        + pw.b.x * (y * (pw.g.y - 1.0f) + pw.g.y * (x + z)))
+        / d;
+    f32 sg = (x * (pw.r.y - pw.b.y)
+        + pw.r.x * (y * (pw.b.y - 1.0f) + pw.b.y * (x + z))
+        - pw.b.x * (y * (pw.r.y - 1.0f) + pw.r.y * (x + z)))
+        / d;
+    f32 sb = (x * (pw.g.y - pw.r.y)
+        - pw.r.x * (y * (pw.g.y - 1.0f) + pw.g.y * (x + z))
+        + pw.g.x * (y * (pw.r.y - 1.0f) + pw.r.y * (x + z)))
+        / d;
+
+    return hgb_mat3(
+        sr * pw.r.x,
+        sg * pw.g.x,
+        sb * pw.b.x,
+        sr * pw.r.y,
+        sg * pw.g.y,
+        sb * pw.b.y,
+        sr * (1.0f - pw.r.x - pw.r.y),
+        sg * (1.0f - pw.g.x - pw.g.y),
+        sb * (1.0f - pw.b.x - pw.b.y)
+    );
+}
+
+__CONSTANT__ Primaries_Whitepoint BT_709 = {
+    {0.640, 0.330},
+    {0.300, 0.600},
+    {0.150, 0.060},
+    {0.3127, 0.3290}
+};
+
+__CONSTANT__ Primaries_Whitepoint BT_2020 = {
+    {0.708, 0.292},
+    {0.170, 0.797},
+    {0.131, 0.046},
+    {0.3127, 0.3290}
+};
+
+__CONSTANT__ Primaries_Whitepoint DCI_P3 = {
+    {0.680, 0.320},
+    {0.265, 0.690},
+    {0.150, 0.060},
+    {0.314, 0.351}
+};
+
+__CONSTANT__ Primaries_Whitepoint DISPLAY_P3 = {
+    {0.680, 0.320},
+    {0.265, 0.690},
+    {0.150, 0.060},
+    {0.3127, 0.3290}
+};
+
+__CONSTANT__ Primaries_Whitepoint ACES_AP0 = {
+    {0.73470, 0.26530},
+    {0.00000, 1.00000},
+    {0.00010, -0.07700},
+    {0.32168, 0.33767}
+};
+
+__CONSTANT__ Primaries_Whitepoint ACES_AP1 = {
+    {0.71300, 0.29300},
+    {0.16500, 0.83000},
+    {0.12800, 0.04400},
+    {0.32168, 0.33767}
+};
+
+__CONSTANT__ Primaries_Whitepoint ADOBE_RGB = {
+    {0.6400, 0.3300},
+    {0.2100, 0.7100},
+    {0.1500, 0.0600},
+    {0.3127, 0.3290}
+};
+
+__CONSTANT__ Primaries_Whitepoint ADOBE_WIDE_GAMUT_RGB = {
+    {0.7347, 0.2653},
+    {0.1152, 0.8264},
+    {0.1566, 0.0177},
+    {0.3457, 0.3585}
+};
+
+__CONSTANT__ Primaries_Whitepoint ARRI_WIDE_GAMUT_3 = {
+    {0.6840, 0.3130},
+    {0.2210, 0.8480},
+    {0.0861, -0.1020},
+    {0.3127, 0.3290}
+};
+
+__CONSTANT__ Primaries_Whitepoint ARRI_WIDE_GAMUT_4 = {
+    {0.7347, 0.2653},
+    {0.1424, 0.8576},
+    {0.0991, -0.0308},
+    {0.3127, 0.3290}
+};
+
+__CONSTANT__ Primaries_Whitepoint CANON_CINEMA_GAMUT = {
+    {0.7400, 0.2700},
+    {0.1700, 1.1400},
+    {0.0800, -0.1000},
+    {0.3127, 0.3290}
+};
+
+__CONSTANT__ Primaries_Whitepoint DJI_D_GAMUT = {
+    {0.7100, 0.3100},
+    {0.2100, 0.8800},
+    {0.0900, -0.0800},
+    {0.3127, 0.3290}
+};
+
+__CONSTANT__ Primaries_Whitepoint E_GAMUT = {
+    {0.8000, 0.3177},
+    {0.1800, 0.9000},
+    {0.0650, -0.0805},
+    {0.3127, 0.3290}
+};
+
+__CONSTANT__ Primaries_Whitepoint PANASONIC_V_GAMUT = {
+    {0.7300, 0.2800},
+    {0.1650, 0.8400},
+    {0.1000, -0.0300},
+    {0.3127, 0.3290}
+};
+
+__CONSTANT__ Primaries_Whitepoint PROPHOTO = {
+    {0.734699, 0.265301},
+    {0.159597, 0.840403},
+    {0.036598, 0.000105},
+    {0.345704, 0.358540}
+};
+
+__CONSTANT__ Primaries_Whitepoint RED_WIDE_GAMUT_RGB = {
+    {0.780308, 0.304253},
+    {0.121595, 1.493994},
+    {0.095612, -0.084589},
+    {0.3127, 0.3290}
+};
+
+__DEVICE__ Primaries_Whitepoint S_GAMUT = {
+    {0.7300, 0.2800},
+    {0.1400, 0.8550},
+    {0.1000, -0.0500},
+    {0.3127, 0.3290},
+};
+
+__DEVICE__ Primaries_Whitepoint S_GAMUT3_CINE = {
+    {0.7660, 0.2750},
+    {0.2250, 0.8000},
+    {0.0890, -0.0870},
+    {0.3127, 0.3290},
+};
