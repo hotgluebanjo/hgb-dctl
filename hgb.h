@@ -523,6 +523,23 @@ __DEVICE__ void arena_free_all(__PRIVATE__ Arena *a) {
     a->offset = 0;
 }
 
+typedef struct Temp_Arena Temp_Arena;
+struct Temp_Arena {
+    Arena *arena;
+    usize old_offset;
+};
+
+__DEVICE__ Temp_Arena temp_arena_begin(Arena *a) {
+    Temp_Arena temp;
+    temp.arena = a;
+    temp.old_offset = a->offset;
+    return temp;
+}
+
+__DEVICE__ void temp_arena_end(Temp_Arena temp) {
+    temp.arena->offset = temp.old_offset;
+}
+
 typedef struct Linspace Linspace;
 struct Linspace {
     f32 delta;
