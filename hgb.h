@@ -638,13 +638,13 @@ struct hgb_Arena {
     hgb_usize offset;
 };
 
-__DEVICE__ void arena_init(__PRIVATE__ hgb_Arena *a, __PRIVATE__ hgb_byte *backing, hgb_usize size) {
+__DEVICE__ void hgb_arena_init(__PRIVATE__ hgb_Arena *a, __PRIVATE__ hgb_byte *backing, hgb_usize size) {
     a->data = backing;
     a->size = size;
     a->offset = 0;
 }
 
-__DEVICE__ void *arena_alloc(__PRIVATE__ hgb_Arena *a, hgb_usize amount) {
+__DEVICE__ void *hgb_arena_alloc(__PRIVATE__ hgb_Arena *a, hgb_usize amount) {
     hgb_usize total = a->offset + amount;
     if (total <= a->size) {
         void *ptr = a->data + a->offset;
@@ -654,7 +654,7 @@ __DEVICE__ void *arena_alloc(__PRIVATE__ hgb_Arena *a, hgb_usize amount) {
     return nil;
 }
 
-__DEVICE__ void arena_free_all(__PRIVATE__ hgb_Arena *a) {
+__DEVICE__ void hgb_arena_free_all(__PRIVATE__ hgb_Arena *a) {
     a->offset = 0;
 }
 
@@ -664,14 +664,14 @@ struct hgb_Temp_Arena {
     hgb_usize old_offset;
 };
 
-__DEVICE__ hgb_Temp_Arena temp_arena_begin(hgb_Arena *a) {
+__DEVICE__ hgb_Temp_Arena hgb_temp_arena_begin(hgb_Arena *a) {
     hgb_Temp_Arena temp;
     temp.arena = a;
     temp.old_offset = a->offset;
     return temp;
 }
 
-__DEVICE__ void temp_arena_end(hgb_Temp_Arena temp) {
+__DEVICE__ void hgb_temp_arena_end(hgb_Temp_Arena temp) {
     temp.arena->offset = temp.old_offset;
 }
 
@@ -704,7 +704,7 @@ __DEVICE__ hgb_f32 linspace_next(__PRIVATE__ hgb_Linspace *it) {
 }
 
 __DEVICE__ hgb_f32 *linspace_allocate(__PRIVATE__ hgb_Arena *arena, hgb_Linspace it) {
-    hgb_f32 *array = (hgb_f32 *)arena_alloc(arena, sizeof(hgb_f32) * it.steps);
+    hgb_f32 *array = (hgb_f32 *)hgb_arena_alloc(arena, sizeof(hgb_f32) * it.steps);
     if (array == nil) {
         return nil;
     }
@@ -715,6 +715,250 @@ __DEVICE__ hgb_f32 *linspace_allocate(__PRIVATE__ hgb_Arena *arena, hgb_Linspace
     }
     return array;
 }
+
+
+__DEVICE__ hgb_usize _hgb_find_interval(hgb_f32 *points, hgb_usize n_pts, hgb_f32 x) {
+    hgb_usize upper = 0;
+    hgb_usize lower = n_pts - 1;
+    while (lower != upper - 1) {
+        hgb_usize center = lower + (upper - lower) / 2;
+        if (x >= points[center]) {
+            lower = center;
+        } else {
+            upper = center;
+        }
+    }
+    return lower;
+}
+
+__DEVICE__ bool _hgb_handle_beyond_range(
+    hgb_f32 x0, hgb_f32 xn_1,
+    hgb_f32 y0, hgb_f32 yn_1,
+    hgb_f32 m0, hgb_f32 mn_1,
+    hgb_f32 x,
+    bool extrapolate,
+    hgb_f32 *res
+) {
+    if (x <= x0) {
+        if (extrapolate) {
+            *res = (x - x0) * m0 + y0;
+        } else {
+            *res = y0;
+        }
+        return true;
+    }
+    if (x >= xn_1) {
+        if (extrapolate) {
+            *res = (x - xn_1) * mn_1 + yn_1;
+        } else {
+            *res = yn_1;
+        }
+        return true;
+    }
+    return false;
+}
+
+typedef enum {
+    hgb_Spline_End_Natural,
+    hgb_Spline_End_Parabolic,
+    hgb_Spline_End_Slope,
+    hgb_Spline_End_Inner,
+} hgb_Spline_End_Condition;
+
+__DEVICE__ hgb_f32 _hgb_end_tangent(hgb_f32 x0, hgb_f32 x1, hgb_f32 y0, hgb_f32 y1, hgb_f32 m, hgb_Spline_End_Condition condition) {
+    hgb_f32 res;
+    switch (condition) {
+        case hgb_Spline_End_Natural:   res = 3.0f * (y1 - y0) / (2.0f * (x1 - x0)) - m / 2.0f; break;
+        case hgb_Spline_End_Parabolic: res = 2.0f * (y1 - y0) / (x1 - x0) - m; break;
+        case hgb_Spline_End_Slope:     res = (y1 - y0) / (x1 - x0); break;
+        case hgb_Spline_End_Inner:     res = m; break;
+    }
+    return res;
+}
+
+typedef enum {
+    // Previous--next secant-line tangents. No tension parameter as it causes ripples
+    // at any value other than `0.0` in 1D.
+    //
+    // https://www.youtube.com/watch?v=UCtmRJs726U
+    // https://en.wikipedia.org/wiki/Cubic_Hermite_spline#Cardinal_spline
+    hgb_Hermite_Method_Cardinal,
+
+    // https://en.wikipedia.org/wiki/Cubic_Hermite_spline#Finite_difference
+    hgb_Hermite_Method_Mean_Velocity,
+
+    // Correctly derived non-uniform Catmull--Rom tangents.
+    //
+    // https://splines.readthedocs.io/en/latest/euclidean/catmull-rom-properties.html
+    hgb_Hermite_Method_Catmull_Rom,
+
+    // https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.PchipInterpolator.html
+    hgb_Hermite_Method_Pchip,
+
+    // https://en.wikipedia.org/wiki/Akima_spline
+    hgb_Hermite_Method_Akima,
+} hgb_Hermite_Method;
+
+typedef struct hgb_Cubic_Coeff hgb_Cubic_Coeff;
+struct hgb_Cubic_Coeff {
+    hgb_f32 a, b, c, d;
+};
+
+typedef struct hgb_Spline_Hermite hgb_Spline_Hermite;
+struct hgb_Spline_Hermite {
+    hgb_f32 *centers;
+    hgb_f32 *values;
+    hgb_Cubic_Coeff *coeff;
+    hgb_usize n_pts;
+    hgb_f32 *end_tangents;
+    bool extrapolate;
+};
+
+// A Cubic Hermite Spline built with the auto-tangents `method`.
+//
+// https://en.wikipedia.org/wiki/Cubic_Hermite_spline
+//
+// UNCHECKED REQUIREMENTS:
+//      - len(centers) == len(values)
+//      - len(centers) == n_pts
+//      - n_pts >= 4
+__DEVICE__ hgb_Spline_Hermite build_hermite(
+    hgb_Arena arena,
+    hgb_f32 *centers,
+    hgb_f32 *values,
+    hgb_usize n_pts,
+    hgb_Hermite_Method method,
+    hgb_Spline_End_Condition ends,
+    bool extrapolate
+) {
+    hgb_Temp_Arena tmp = hgb_temp_arena_begin(&arena);
+    hgb_f32 *tangents = cast(hgb_f32 *)hgb_arena_alloc(tmp.arena, sizeof(hgb_f32) * n_pts);
+
+    switch (method) {
+        case hgb_Hermite_Method_Cardinal:
+            for_range(i, 1, n_pts - 1) {
+                tangents[i] = (values[i+1] - values[i-1]) / (centers[i+1] - centers[i-1]);
+            }
+            break;
+        case hgb_Hermite_Method_Mean_Velocity:
+            for_range(i, 1, n_pts - 1) {
+                hgb_f32 v_1 = (values[i] - values[i-1]) / (centers[i] - centers[i-1]);
+                hgb_f32 v0 = (values[i+1] - values[i]) / (centers[i+1] - centers[i]);
+                tangents[i] = (v_1 + v0) / 2.0f;
+            }
+            break;
+        case hgb_Hermite_Method_Catmull_Rom:
+            for_range(i, 1, n_pts - 1) {
+                hgb_f32 delta_1 = centers[i] - centers[i-1];
+                hgb_f32 delta0 = centers[i+1] - centers[i];
+
+                hgb_f32 v_1 = (values[i] - values[i-1]) / delta_1;
+                hgb_f32 v0 = (values[i+1] - values[i]) / delta0;
+
+                tangents[i] = (delta0 * v_1 + delta_1 * v0) / (delta0 + delta_1);
+            }
+            break;
+        case hgb_Hermite_Method_Pchip:
+            for_range(i, 1, n_pts - 1) {
+                hgb_f32 delta_1 = centers[i] - centers[i-1];
+                hgb_f32 delta0 = centers[i+1] - centers[i];
+
+                hgb_f32 v_1 = (values[i] - values[i-1]) / delta_1;
+                hgb_f32 v0 = (values[i+1] - values[i]) / delta0;
+
+                hgb_f32 wl = 2.0f * delta0 + delta_1;
+                hgb_f32 wr = delta0 + 2.0f * delta_1;
+
+                tangents[i] = (wl + wr) / (wl / v_1 + wr / v0);
+            }
+            break;
+        case hgb_Hermite_Method_Akima: {
+            hgb_f32 *weights = (hgb_f32 *)hgb_arena_alloc(tmp.arena, sizeof(hgb_f32) * (n_pts - 1));
+
+            for_range(i, 0, n_pts - 1) {
+                weights[i] = (values[i+1] - values[i]) / (centers[i+1] - centers[i]);
+            }
+
+            // Second and last intervals.
+            tangents[1] = (weights[0] + weights[1]) / 2.0f;
+            tangents[n_pts-2] = (weights[n_pts-3] + weights[n_pts-2]) / 2.0f;
+
+            for_range(i, 2, n_pts - 2) {
+                hgb_f32 mn =
+                    hgb_abs(weights[i+1] - weights[i]) * weights[i-1]
+                  + hgb_abs(weights[i-1] - weights[i-2]) * weights[i];
+
+                hgb_f32 md =
+                    hgb_abs(weights[i+1] - weights[i])
+                  + hgb_abs(weights[i-1] - weights[i-2]);
+
+                if (md == 0.0f) {
+                    tangents[i] = (weights[i-1] + weights[i]) / 2.0f;
+                } else {
+                    tangents[i] = mn / md;
+                }
+            }
+            break;
+        }
+    }
+
+    hgb_temp_arena_end(tmp);
+
+    // First and last points.
+    hgb_f32 *end_tangents = (hgb_f32 *)hgb_arena_alloc(&arena, sizeof(hgb_f32) * 2);
+    end_tangents[0] = _hgb_end_tangent(centers[0], centers[1], values[0], values[1], tangents[1], ends);
+    end_tangents[1] = _hgb_end_tangent(centers[n_pts-2], centers[n_pts-1], values[n_pts-2], values[n_pts-1], tangents[n_pts-2], ends);
+
+    tangents[0] = end_tangents[0];
+    tangents[n_pts-1] = end_tangents[1];
+
+    // coeff := make([][4]Float, n-1);
+    hgb_Cubic_Coeff *coeff = (hgb_Cubic_Coeff *)hgb_arena_alloc(&arena, sizeof(hgb_Cubic_Coeff) * (n_pts - 1));
+
+    for_range(i, 0, n_pts - 1) {
+        hgb_f32 delta = centers[i+1] - centers[i];
+        coeff[i].a = (2.0 * values[i] + tangents[i] * delta - 2.0 * values[i+1] + delta * tangents[i+1]);
+        coeff[i].b = (-3.0 * values[i] + 3.0 * values[i+1] - 2.0 * delta * tangents[i] - delta * tangents[i+1]);
+        coeff[i].c = delta * tangents[i];
+        coeff[i].d = values[i];
+    }
+
+    hgb_Spline_Hermite res = {
+        centers,
+        values,
+        coeff,
+        n_pts,
+        end_tangents,
+        extrapolate
+    };
+
+    return res;
+}
+
+__DEVICE__ hgb_f32 hgb_spline_eval_hermite(hgb_Spline_Hermite *s, hgb_f32 x) {
+    hgb_f32 beyond_val;
+    bool is_beyond = _hgb_handle_beyond_range(
+        s->centers[0],
+        s->centers[s->n_pts-1],
+        s->values[0],
+        s->values[s->n_pts-1],
+        s->end_tangents[0],
+        s->end_tangents[1],
+        x,
+        s->extrapolate,
+        &beyond_val
+    );
+
+    if (is_beyond) {
+        return beyond_val;
+    }
+
+    hgb_usize i = _hgb_find_interval(s->centers, s->n_pts, x);
+    hgb_f32 t = (x - s->centers[i]) / (s->centers[i+1] - s->centers[i]);
+
+    return s->coeff[i].a * hgb_pow(t, 3.0f) + s->coeff[i].b * hgb_pow(t, 2.0f) + s->coeff[i].c * t + s->coeff[i].d;
+}
+
 
 __DEVICE__ inline hgb_f32 hgb_basis_gaussian(hgb_f32 x, hgb_f32 size) {
     return hgb_exp(hgb_pow(x / size, 2.0f));
