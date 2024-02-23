@@ -718,8 +718,8 @@ __DEVICE__ hgb_f32 *linspace_allocate(__PRIVATE__ hgb_Arena *arena, hgb_Linspace
 
 
 __DEVICE__ hgb_usize _hgb_find_interval(hgb_f32 *points, hgb_usize n_pts, hgb_f32 x) {
-    hgb_usize upper = 0;
-    hgb_usize lower = n_pts - 1;
+    hgb_usize lower = 0;
+    hgb_usize upper = n_pts - 1;
     while (lower != upper - 1) {
         hgb_usize center = lower + (upper - lower) / 2;
         if (x >= points[center]) {
