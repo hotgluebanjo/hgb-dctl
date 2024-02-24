@@ -874,7 +874,7 @@ __DEVICE__ HGB_Spline_Hermite hgb_spline_build_hermite(
             }
             break;
         case HGB_Hermite_Method_Akima: {
-            hgb_f32 *weights = (hgb_f32 *)hgb_arena_alloc(tmp.arena, sizeof(hgb_f32) * (n_pts - 1));
+            hgb_f32 *weights = cast(hgb_f32 *)hgb_arena_alloc(tmp.arena, sizeof(hgb_f32) * (n_pts - 1));
 
             for_range(i, 0, n_pts - 1) {
                 weights[i] = (values[i+1] - values[i]) / (centers[i+1] - centers[i]);
@@ -906,14 +906,14 @@ __DEVICE__ HGB_Spline_Hermite hgb_spline_build_hermite(
     hgb_temp_arena_end(tmp);
 
     // First and last points.
-    hgb_f32 *end_tangents = (hgb_f32 *)hgb_arena_alloc(arena, sizeof(hgb_f32) * 2);
+    hgb_f32 *end_tangents = cast(hgb_f32 *)hgb_arena_alloc(arena, sizeof(hgb_f32) * 2);
     end_tangents[0] = _hgb_end_tangent(centers[0], centers[1], values[0], values[1], tangents[1], ends);
     end_tangents[1] = _hgb_end_tangent(centers[n_pts-2], centers[n_pts-1], values[n_pts-2], values[n_pts-1], tangents[n_pts-2], ends);
 
     tangents[0] = end_tangents[0];
     tangents[n_pts-1] = end_tangents[1];
 
-    HGB_Cubic_Coeff *coeff = (HGB_Cubic_Coeff *)hgb_arena_alloc(arena, sizeof(HGB_Cubic_Coeff) * (n_pts - 1));
+    HGB_Cubic_Coeff *coeff = cast(HGB_Cubic_Coeff *)hgb_arena_alloc(arena, sizeof(HGB_Cubic_Coeff) * (n_pts - 1));
 
     for_range(i, 0, n_pts - 1) {
         hgb_f32 delta = centers[i+1] - centers[i];
