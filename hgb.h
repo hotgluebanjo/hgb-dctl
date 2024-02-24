@@ -19,6 +19,7 @@
     #define HGB_SPOW HGB_Spow_Mirror
 #endif
 
+// TODO: OpenCL.
 #if defined(_WIN32) || defined(_WIN64)
     #define HGB_OS_WINDOWS
 #elif defined(__APPLE__) && defined(__MACH__)
@@ -628,7 +629,7 @@ __DEVICE__ void hgb_stack_free_all(__PRIVATE__ HGB_Stack *s) {
 }
 
 __DEVICE__ void hgb_stack_free(__PRIVATE__ HGB_Stack *s, __PRIVATE__ void *ptr) {
-    s->offset = hgb_usize(ptr) - hgb_usize(s->data);
+    s->offset = cast(hgb_usize)ptr - cast(hgb_usize)s->data;
 }
 
 typedef struct HGB_Arena HGB_Arena;
@@ -660,11 +661,11 @@ __DEVICE__ void hgb_arena_free_all(__PRIVATE__ HGB_Arena *a) {
 
 typedef struct HGB_Temp_Arena HGB_Temp_Arena;
 struct HGB_Temp_Arena {
-    HGB_Arena *arena;
+    __PRIVATE__ HGB_Arena *arena;
     hgb_usize old_offset;
 };
 
-__DEVICE__ HGB_Temp_Arena hgb_temp_arena_begin(HGB_Arena *a) {
+__DEVICE__ HGB_Temp_Arena hgb_temp_arena_begin(__PRIVATE__ HGB_Arena *a) {
     HGB_Temp_Arena temp;
     temp.arena = a;
     temp.old_offset = a->offset;
@@ -686,7 +687,7 @@ struct HGB_Linspace {
 
 __DEVICE__ HGB_Linspace hgb_linspace_create(hgb_f32 start, hgb_f32 end, hgb_usize steps) {
     HGB_Linspace it;
-    it.delta = (end - start) / hgb_f32(steps - 1);
+    it.delta = (end - start) / cast(hgb_f32)(steps - 1);
     it.start = start;
     it.steps = steps;
     it.current = 0;
@@ -698,7 +699,7 @@ __DEVICE__ hgb_f32 hgb_linspace_next(__PRIVATE__ HGB_Linspace *it) {
     if (it->current == it->steps - 1) {
         it->done = true;
     }
-    hgb_f32 res = hgb_f32(it->current) * it->delta + it->start;
+    hgb_f32 res = cast(hgb_f32)it->current * it->delta + it->start;
     it->current += 1;
     return res;
 }
@@ -823,7 +824,7 @@ struct HGB_Spline_Hermite {
 //      - len(centers) == n_pts
 //      - n_pts >= 4
 __DEVICE__ HGB_Spline_Hermite hgb_spline_build_hermite(
-    HGB_Arena *arena,
+    __PRIVATE__ HGB_Arena *arena,
     hgb_f32 *centers,
     hgb_f32 *values,
     hgb_usize n_pts,
