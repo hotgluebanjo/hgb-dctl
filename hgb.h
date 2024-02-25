@@ -705,7 +705,7 @@ __DEVICE__ hgb_f32 hgb_linspace_next(__PRIVATE__ HGB_Linspace *it) {
 }
 
 __DEVICE__ hgb_f32 *hgb_linspace_allocate(__PRIVATE__ HGB_Arena *arena, HGB_Linspace it) {
-    hgb_f32 *array = (hgb_f32 *)hgb_arena_alloc(arena, sizeof(hgb_f32) * it.steps);
+    hgb_f32 *array = cast(hgb_f32 *)hgb_arena_alloc(arena, sizeof(hgb_f32) * it.steps);
     if (array == nil) {
         return nil;
     }
@@ -716,7 +716,6 @@ __DEVICE__ hgb_f32 *hgb_linspace_allocate(__PRIVATE__ HGB_Arena *arena, HGB_Lins
     }
     return array;
 }
-
 
 __DEVICE__ hgb_usize _hgb_find_interval(hgb_f32 *points, hgb_usize n_pts, hgb_f32 x) {
     hgb_usize lower = 0;
