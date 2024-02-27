@@ -376,17 +376,10 @@ __DEVICE__ hgb_f32 hgb_dot_vec2(HGB_Vec2 a, HGB_Vec2 b) { return a.x * b.x + a.y
 __DEVICE__ hgb_f32 hgb_dot_vec3(HGB_Vec3 a, HGB_Vec3 b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 __DEVICE__ hgb_f32 hgb_dot_vec4(HGB_Vec4 a, HGB_Vec4 b) { return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w; }
 
-__DEVICE__ hgb_f32 hgb_cross_vec2(HGB_Vec2 a, HGB_Vec2 b) {
-    return a.x * b.y - b.x * a.y;
-}
-__DEVICE__ HGB_Vec3 hgb_cross_vec3(HGB_Vec3 a, HGB_Vec3 b) {
-    return hgb_vec3(
-        a.y * b.z - a.z * b.y,
-        a.z * b.x - a.x * b.z,
-        a.x * b.y - a.y * b.x
-    );
-}
+__DEVICE__ hgb_f32  hgb_cross_vec2(HGB_Vec2 a, HGB_Vec2 b) { return a.x * b.y - b.x * a.y; }
+__DEVICE__ HGB_Vec3 hgb_cross_vec3(HGB_Vec3 a, HGB_Vec3 b) { return hgb_vec3(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x); }
 
+// Row-wise. Eh.
 typedef struct HGB_Mat2 HGB_Mat2;
 struct HGB_Mat2 {
     hgb_f32 v[2][2];
@@ -492,62 +485,53 @@ __DEVICE__ inline HGB_Mat4 hgb_identity_mat4() {
 }
 
 __DEVICE__ inline HGB_Mat2 hgb_transpose_mat2(HGB_Mat2 m) {
-    for (hgb_usize j = 0; j < 2; j += 1) {
-        for (hgb_usize i = j + 1; i < 2; i += 1) {
-            hgb_f32 t = m.v[i][j];
-            m.v[i][j] = m.v[j][i];
-            m.v[j][i] = t;
-        }
-    }
-    return m;
+    HGB_Mat2 res = hgb_mat2(
+        m.v[0][0], m.v[1][0],
+        m.v[0][1], m.v[1][1]
+    );
+    return res;
 }
 __DEVICE__ inline HGB_Mat3 hgb_transpose_mat3(HGB_Mat3 m) {
-    for (hgb_usize j = 0; j < 3; j += 1) {
-        for (hgb_usize i = j + 1; i < 3; i += 1) {
-            hgb_f32 t = m.v[i][j];
-            m.v[i][j] = m.v[j][i];
-            m.v[j][i] = t;
-        }
-    }
-    return m;
+    HGB_Mat3 res = hgb_mat3(
+        m.v[0][0], m.v[1][0], m.v[2][0],
+        m.v[0][1], m.v[1][1], m.v[2][1],
+        m.v[0][2], m.v[1][2], m.v[2][2]
+    );
+    return res;
 }
 __DEVICE__ inline HGB_Mat4 hgb_transpose_mat4(HGB_Mat4 m) {
-    for (hgb_usize j = 0; j < 4; j += 1) {
-        for (hgb_usize i = j + 1; i < 4; i += 1) {
-            hgb_f32 t = m.v[i][j];
-            m.v[i][j] = m.v[j][i];
-            m.v[j][i] = t;
-        }
-    }
-    return m;
+    HGB_Mat4 res = hgb_mat4(
+        m.v[0][0], m.v[1][0], m.v[2][0], m.v[3][0],
+        m.v[0][1], m.v[1][1], m.v[2][1], m.v[3][1],
+        m.v[0][2], m.v[1][2], m.v[2][2], m.v[3][2],
+        m.v[0][3], m.v[1][3], m.v[2][3], m.v[3][3]
+    );
+    return res;
 }
 
 __DEVICE__ inline void hgb_transpose_mut_mat2(HGB_Mat2 *m) {
-    for (hgb_usize j = 0; j < 2; j += 1) {
-        for (hgb_usize i = j + 1; i < 2; i += 1) {
-            hgb_f32 t = m->v[i][j];
-            m->v[i][j] = m->v[j][i];
-            m->v[j][i] = t;
-        }
-    }
+    HGB_Mat2 tmp = *m;
+    *m = hgb_mat2(
+        tmp.v[0][0], tmp.v[1][0],
+        tmp.v[0][1], tmp.v[1][1]
+    );
 }
 __DEVICE__ inline void hgb_transpose_mut_mat3(HGB_Mat3 *m) {
-    for (hgb_usize j = 0; j < 3; j += 1) {
-        for (hgb_usize i = j + 1; i < 3; i += 1) {
-            hgb_f32 t = m->v[i][j];
-            m->v[i][j] = m->v[j][i];
-            m->v[j][i] = t;
-        }
-    }
+    HGB_Mat3 tmp = *m;
+    *m = hgb_mat3(
+        tmp.v[0][0], tmp.v[1][0], tmp.v[2][0],
+        tmp.v[0][1], tmp.v[1][1], tmp.v[2][1],
+        tmp.v[0][2], tmp.v[1][2], tmp.v[2][2]
+    );
 }
 __DEVICE__ inline void hgb_transpose_mut_mat4(HGB_Mat4 *m) {
-    for (hgb_usize j = 0; j < 4; j += 1) {
-        for (hgb_usize i = j + 1; i < 4; i += 1) {
-            hgb_f32 t = m->v[i][j];
-            m->v[i][j] = m->v[j][i];
-            m->v[j][i] = t;
-        }
-    }
+    HGB_Mat4 tmp = *m;
+    *m = hgb_mat4(
+        tmp.v[0][0], tmp.v[1][0], tmp.v[2][0], tmp.v[3][0],
+        tmp.v[0][1], tmp.v[1][1], tmp.v[2][1], tmp.v[3][1],
+        tmp.v[0][2], tmp.v[1][2], tmp.v[2][2], tmp.v[3][2],
+        tmp.v[0][3], tmp.v[1][3], tmp.v[2][3], tmp.v[3][3]
+    );
 }
 
 __DEVICE__ hgb_f32 hgb_determinant_mat2(HGB_Mat2 m) {
@@ -579,21 +563,39 @@ __DEVICE__ bool hgb_inverse_mat3(HGB_Mat3 m, HGB_Mat3 *out) {
     return true;
 }
 
+__DEVICE__ HGB_Mat2 hgb_mul_mat2(HGB_Mat2 a, HGB_Mat2 b) {
+    HGB_Mat2 res = hgb_zeros_mat2();
+    for_range(i, 0, 2) {
+        for_range(j, 0, 2) {
+            res.v[i][j] = a.v[i][0] * b.v[0][j]
+                        + a.v[i][1] * b.v[1][j];
+        }
+    }
+    return res;
+}
+
 __DEVICE__ HGB_Mat3 hgb_mul_mat3(HGB_Mat3 a, HGB_Mat3 b) {
     HGB_Mat3 res = hgb_zeros_mat3();
+    for_range(i, 0, 3) {
+        for_range(j, 0, 3) {
+            res.v[i][j] = a.v[i][0] * b.v[0][j]
+                        + a.v[i][1] * b.v[1][j]
+                        + a.v[i][2] * b.v[2][j];
+        }
+    }
+    return res;
+}
 
-    res.v[0][0] = (b.v[0][0] * a.v[0][0]) + (b.v[0][1] * a.v[1][0]) + (b.v[0][2] * a.v[2][0]);
-    res.v[0][1] = (b.v[0][0] * a.v[0][1]) + (b.v[0][1] * a.v[1][1]) + (b.v[0][2] * a.v[2][1]);
-    res.v[0][2] = (b.v[0][0] * a.v[0][2]) + (b.v[0][1] * a.v[1][2]) + (b.v[0][2] * a.v[2][2]);
-
-    res.v[1][0] = (b.v[1][0] * a.v[0][0]) + (b.v[1][1] * a.v[1][0]) + (b.v[1][2] * a.v[2][0]);
-    res.v[1][1] = (b.v[1][0] * a.v[0][1]) + (b.v[1][1] * a.v[1][1]) + (b.v[1][2] * a.v[2][1]);
-    res.v[1][2] = (b.v[1][0] * a.v[0][2]) + (b.v[1][1] * a.v[1][2]) + (b.v[1][2] * a.v[2][2]);
-
-    res.v[2][0] = (b.v[2][0] * a.v[0][0]) + (b.v[2][1] * a.v[1][0]) + (b.v[2][2] * a.v[2][0]);
-    res.v[2][1] = (b.v[2][0] * a.v[0][1]) + (b.v[2][1] * a.v[1][1]) + (b.v[2][2] * a.v[2][1]);
-    res.v[2][2] = (b.v[2][0] * a.v[0][2]) + (b.v[2][1] * a.v[1][2]) + (b.v[2][2] * a.v[2][2]);
-
+__DEVICE__ HGB_Mat4 hgb_mul_mat4(HGB_Mat4 a, HGB_Mat4 b) {
+    HGB_Mat4 res = hgb_zeros_mat4();
+    for_range(i, 0, 4) {
+        for_range(j, 0, 4) {
+            res.v[i][j] = a.v[i][0] * b.v[0][j]
+                        + a.v[i][1] * b.v[1][j]
+                        + a.v[i][2] * b.v[2][j]
+                        + a.v[i][3] * b.v[3][j];
+        }
+    }
     return res;
 }
 
@@ -607,7 +609,7 @@ __DEVICE__ inline HGB_Vec3 hgb_mul_mat3_vec3(HGB_Mat3 m, HGB_Vec3 v) {
 
 typedef struct HGB_Stack HGB_Stack;
 struct HGB_Stack {
-    __PRIVATE__ hgb_byte *data; // ?
+    __PRIVATE__ hgb_byte *data;
     hgb_usize size;
     hgb_usize offset;
 };
@@ -634,7 +636,7 @@ __DEVICE__ void hgb_stack_free(__PRIVATE__ HGB_Stack *s, __PRIVATE__ void *ptr) 
 
 typedef struct HGB_Arena HGB_Arena;
 struct HGB_Arena {
-    __PRIVATE__ hgb_byte *data; // TODO
+    __PRIVATE__ hgb_byte *data;
     hgb_usize size;
     hgb_usize offset;
 };
@@ -705,7 +707,7 @@ __DEVICE__ hgb_f32 hgb_linspace_next(__PRIVATE__ HGB_Linspace *it) {
 }
 
 __DEVICE__ hgb_f32 *hgb_linspace_allocate(__PRIVATE__ HGB_Arena *arena, HGB_Linspace it) {
-    hgb_f32 *array = cast(hgb_f32 *)hgb_arena_alloc(arena, sizeof(hgb_f32) * it.steps);
+    hgb_f32 *array = (hgb_f32 *)hgb_arena_alloc(arena, sizeof(hgb_f32) * it.steps);
     if (array == nil) {
         return nil;
     }
