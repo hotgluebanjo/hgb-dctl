@@ -1,6 +1,5 @@
 // HGB DCTL library 0.1.0
 // ----------------------
-// Wheel reinvention!
 // Attempting to be compatible with all DCTL targets.
 //
 // - https://github.com/hotgluebanjo
